@@ -1,6 +1,6 @@
 package com.jmorri6.util;
 
-import java.sql.Date;
+import java.util.Date;
 import java.util.List;
 
 import com.jmorri6.pojo.Budget;

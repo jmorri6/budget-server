@@ -1,6 +1,7 @@
 package com.jmorri6.resources;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Schedule;
@@ -62,7 +63,7 @@ public class ScheduledRunner {
 		Calendar c = Calendar.getInstance();
 		c.add(Calendar.MONTH, - 18);
 		try {
-			db.purge(new java.sql.Date(c.getTimeInMillis()));
+			db.purge(new Date(c.getTimeInMillis()));
 		} catch (Exception e) {
 			LOGGER.severe(LogConfig.format("Error during purge", e));
 		}
@@ -71,7 +72,7 @@ public class ScheduledRunner {
 	private void insertMonthlyIncome(ScheduledJob job) {
 		LOGGER.info(LogConfig.format("Starting job {}...", job.getName()));
 		try {
-			db.insertMonthlyIncome(job.getId(), new java.sql.Date(job.calculateNextRunTime().getTime()));
+			db.insertMonthlyIncome(job.getId(), job.calculateNextRunTime());
 		} catch (Exception e) {
 			LOGGER.severe(LogConfig.format(LogConfig.format("{} had an error", job.getName()), e));
 		}

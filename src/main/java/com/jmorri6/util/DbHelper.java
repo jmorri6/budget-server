@@ -1,14 +1,15 @@
 package com.jmorri6.util;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -266,7 +267,7 @@ public class DbHelper implements IDbHelper {
 				t.getType().getCode(),
 				t.getAmount(),
 				t.getDesc(),
-				new Date(Calendar.getInstance().getTimeInMillis()));
+				new Date());
 		
 		double balance = t.getBudget().getBalance();
 		if (t.getType().equals(TransactionType.Debit)) {
@@ -284,7 +285,7 @@ public class DbHelper implements IDbHelper {
 				job.getBudget_id(),
 				job.getDayToRun(),
 				job.getAmount(),
-				new Date(job.calculateNextRunTime().getTime()));
+				job.calculateNextRunTime());
 	}
 	
 	@Override
@@ -299,8 +300,8 @@ public class DbHelper implements IDbHelper {
 		if (rs != null) {
 			try {
 				while (rs.next()) {
-					java.util.Date lastRun = rs.getDate(6) == null ? null : new java.util.Date(rs.getDate(6).getTime());
-					java.util.Date nextRun = rs.getDate(7) == null ? null : new java.util.Date(rs.getDate(7).getTime());
+					Date lastRun = rs.getDate(6) == null ? null : DateHelper.fromString(rs.getString(6));
+					Date nextRun = rs.getDate(7) == null ? null : DateHelper.fromString(rs.getString(7));
 					results.add(new ScheduledJob(rs.getInt(1),
 							rs.getString(2),
 							rs.getInt(3),
@@ -309,7 +310,7 @@ public class DbHelper implements IDbHelper {
 							lastRun,
 							nextRun));
 				}
-			} catch (SQLException e) {
+			} catch (SQLException | ParseException e) {
 	    	  	LOGGER.severe(LogConfig.format("error reading results", e));
 	      }
 		}
@@ -328,9 +329,7 @@ public class DbHelper implements IDbHelper {
 	public void purge(Date olderThan) throws Exception {
 		LOGGER.info("Purging transactions older than 18 months...");
 		int purged = executeUpdate(Queries.DELETE_OLD_TXNS, olderThan);
-		if (purged > 0) {
-			LOGGER.info(LogConfig.format("Purged {} records", ((Integer)purged).toString()));
-		}
+		LOGGER.info(LogConfig.format("Purged {} records", ((Integer)purged).toString()));
 		
 	}
 	
@@ -354,7 +353,7 @@ public class DbHelper implements IDbHelper {
 				insertTxn.setInt(2, TransactionType.Credit.getCode());
 				insertTxn.setDouble(3, b.getAllocation());
 				insertTxn.setString(4, "Monthly Allocation");
-				insertTxn.setDate(5, new Date(Calendar.getInstance().getTimeInMillis()));
+				insertTxn.setString(5, DateHelper.toString(new Date()));
 				insertTxn.executeUpdate();
 				
 				LOGGER.info(LogConfig.format("Updating balance for budget id {}", ((Integer)b.getId()).toString()));
@@ -364,8 +363,8 @@ public class DbHelper implements IDbHelper {
 				updateBalance.executeUpdate();
 			}
 			LOGGER.info(LogConfig.format("Updating next run time for schedule id {}", ((Integer)scheduleId).toString()));
-			updateJob.setDate(1, new Date(Calendar.getInstance().getTimeInMillis()));
-			updateJob.setDate(2, nextRunTime);
+			updateJob.setString(1, DateHelper.toString(new Date()));
+			updateJob.setString(2, DateHelper.toString(nextRunTime));
 			updateJob.setInt(3, scheduleId);
 			updateJob.executeUpdate();
 			c.commit();
@@ -420,7 +419,7 @@ public class DbHelper implements IDbHelper {
 			insertTxn.setInt(2, TransactionType.Debit.getCode());
 			insertTxn.setDouble(3, amount);
 			insertTxn.setString(4, "Scheduled job: " + job.getName());
-			insertTxn.setDate(5, new Date(Calendar.getInstance().getTimeInMillis()));
+			insertTxn.setString(5, DateHelper.toString(new Date()));
 			insertTxn.executeUpdate();
 			
 			double bal = balance - amount;
@@ -428,8 +427,8 @@ public class DbHelper implements IDbHelper {
 			updateBalance.setInt(2, budgetId);
 			updateBalance.executeUpdate();
 				
-			updateJob.setDate(1, new Date(Calendar.getInstance().getTimeInMillis()));
-			updateJob.setDate(2, new Date(job.calculateNextRunTime().getTime()));
+			updateJob.setString(1, DateHelper.toString(new Date()));
+			updateJob.setString(2, DateHelper.toString(new Date()));
 			updateJob.setInt(3, job.getId());
 			updateJob.executeUpdate();
 			c.commit();
@@ -460,8 +459,8 @@ public class DbHelper implements IDbHelper {
 	@Override
 	public void updateNextRunTime(ScheduledJob job) throws Exception {
 		executeUpdate(Queries.UPDATE_SCHEDULED_RUN_TIME, 
-				new Date(Calendar.getInstance().getTimeInMillis()),
-				new Date(job.calculateNextRunTime().getTime()),
+				new Date(),
+				job.calculateNextRunTime(),
 				job.getId());
 	}
 	
@@ -479,7 +478,6 @@ public class DbHelper implements IDbHelper {
 				rs.close();
 			}
 		}
-		
 		return balance;
 	}
 	
@@ -546,7 +544,7 @@ public class DbHelper implements IDbHelper {
 				} else if (parameters[i] instanceof Boolean) {
 					stmt.setBoolean(i + 1, (Boolean)parameters[i]);
 				} else if (parameters[i] instanceof Date) {
-					stmt.setDate(i + 1,  (Date)parameters[i]);
+					stmt.setString(i + 1,  DateHelper.toString((Date)parameters[i]));
 				}
 			}
 		}
@@ -555,7 +553,7 @@ public class DbHelper implements IDbHelper {
 	private Connection openConnection() throws SQLException, ClassNotFoundException {
 	     Connection c = null;
          Class.forName("org.sqlite.JDBC");
-         c = DriverManager.getConnection("<jdbcUrl>");
+         c = DriverManager.getConnection("jdbc:sqlite:/Users/jmorri6/Documents/Github/budget.db");
 	     return c;
 	}
 }
