@@ -1,2 +1,3 @@
 .classpath
 .project
+app.*.log*
