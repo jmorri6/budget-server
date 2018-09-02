@@ -6,7 +6,8 @@ import java.util.Date;
 public class ScheduledJob {
 	private int id;
 	private String name;
-	private int budget_id;
+	private int budgetId;
+	private String budgetName;
 	private int dayToRun;
 	private double amount;
 	private Date lastRunTime;
@@ -16,7 +17,18 @@ public class ScheduledJob {
 			int dayToRun, double amount, Date lastRunTime, Date nextRunTime) {
 		this.id = id;
 		this.name = name;
-		this.budget_id = budget_id;
+		this.budgetId = budget_id;
+		this.dayToRun = dayToRun;
+		this.amount = amount;
+		this.lastRunTime = lastRunTime;
+		this.nextRunTime = nextRunTime;
+	}
+	
+	public ScheduledJob(int id, String name, String budgetName,
+			double amount, int dayToRun, Date lastRunTime, Date nextRunTime) {
+		this.id = id;
+		this.name = name;
+		this.budgetName = budgetName;
 		this.dayToRun = dayToRun;
 		this.amount = amount;
 		this.lastRunTime = lastRunTime;
@@ -42,8 +54,11 @@ public class ScheduledJob {
 	public String getName() {
 		return name;
 	}
-	public int getBudget_id() {
-		return budget_id;
+	public int getBudgetId() {
+		return budgetId;
+	}
+	public String getBudgetName() {
+		return budgetName;
 	}
 	public int getDayToRun() {
 		return dayToRun;
@@ -51,7 +66,6 @@ public class ScheduledJob {
 	public double getAmount() {
 		return amount;
 	}
-	
 	public Date getLastRunTime() {
 		return lastRunTime;
 	}

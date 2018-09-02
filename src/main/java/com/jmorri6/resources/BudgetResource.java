@@ -83,7 +83,6 @@ private static final Logger LOGGER = Logger.getLogger(BudgetResource.class.getNa
 	public Response deleteBudget(@PathParam("id") Integer id) {
 		LOGGER.info("Got request to delete budget");
 		try {
-			
 			dbHelper.deleteBudget(id);
 		} catch (Exception e) {
 			return Response.status(409).build();

@@ -2,6 +2,7 @@ package com.jmorri6.util;
 
 public class Queries {
 	public static final String DELETE_BUDGET = "DELETE FROM Budget WHERE budget_id = ?";
+	public static final String DELETE_BUDGET_BALANCE = "DELETE FROM BudgetBalance where budget_id = ?";
 	public static final String DELETE_CATEGORY = "DELETE FROM Category WHERE category_id = ?";
 	public static final String DELETE_BUDGET_CATEGORY = "DELETE FROM BudgetCategory WHERE budget_id = ?";
 	public static final String DELETE_BUDGET_TXNS = "DELETE FROM BudgetTransaction WHERE budget_id = ?";
@@ -42,8 +43,13 @@ public class Queries {
 	public static final String GET_SPENT_FOR_BUDGET = "SELECT SUM(amount) FROM BudgetTransaction WHERE budget_id = ? AND txn_type = 2 AND created > ?";
 	public static final String GET_ALLOCATED_INCOME = "SELECT SUM(allocation) FROM Budget";
 	
-	public static final String INSERT_SCHEDULED_TXN = "INSERT INTO ScheduledTransacgions (name, budget_id, dayToRun, amount, nextRunTime) values (?, ?, ?, ?, ?)";
+	public static final String INSERT_SCHEDULED_TXN = "INSERT INTO ScheduledTransactions (name, budget_id, dayToRun, amount, nextRunTime) values (?, ?, ?, ?, ?)";
 	public static final String DELETE_SCHEDULED_TXN = "DELETE from ScheduledTransactions where id = ?";
 	public static final String GET_SCHEDULED_TXNS = "SELECT * FROM ScheduledTransactions";
 	public static final String UPDATE_SCHEDULED_RUN_TIME = "UPDATE ScheduledTransactions set lastRunTime = ?, nextRunTime = ? where id = ?";
+	
+	public static final String GET_SCHED_TXNS_FOR_DISPLAY = "select t.id, t.name, b.name, t.amount, t.dayToRun, t.lastRunTime, t.nextRunTime " + 
+			"from ScheduledTransactions t, Budget b " + 
+			"where b.budget_id = t.budget_id " + 
+			"order by b.name ";
 }

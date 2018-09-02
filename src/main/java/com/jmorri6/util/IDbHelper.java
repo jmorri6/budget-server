@@ -8,6 +8,7 @@ import com.jmorri6.pojo.Category;
 import com.jmorri6.pojo.Income;
 import com.jmorri6.pojo.Note;
 import com.jmorri6.pojo.ScheduledJob;
+import com.jmorri6.pojo.SearchTransactionInput;
 import com.jmorri6.pojo.Transaction;
 
 public interface IDbHelper {
@@ -51,6 +52,7 @@ public interface IDbHelper {
 	void insertMonthlyIncome(int scheduleId, Date nextRunTime) throws Exception;
 
 	List<ScheduledJob> getSchedueldJobs();
+	List<ScheduledJob> getSchedueldJobsForDisplay();
 
 	void insertScheduledTransaction(ScheduledJob job) throws Exception;
 
@@ -59,4 +61,6 @@ public interface IDbHelper {
 	void createScheduledJob(ScheduledJob job) throws Exception;
 
 	void updateNextRunTime(ScheduledJob job) throws Exception;
+	
+	List<Transaction> getTransactions(SearchTransactionInput input) throws Exception;
 }

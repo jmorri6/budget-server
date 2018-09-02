@@ -20,6 +20,7 @@ import com.jmorri6.pojo.Category;
 import com.jmorri6.pojo.Income;
 import com.jmorri6.pojo.Note;
 import com.jmorri6.pojo.ScheduledJob;
+import com.jmorri6.pojo.SearchTransactionInput;
 import com.jmorri6.pojo.Transaction;
 import com.jmorri6.pojo.TransactionType;
 
@@ -165,6 +166,7 @@ public class DbHelper implements IDbHelper {
 	public void deleteBudget(int id) throws Exception {
 		executeUpdate(Queries.DELETE_BUDGET_TXNS, id);
 		executeUpdate(Queries.DELETE_BUDGET_CATEGORY, id);
+		executeUpdate(Queries.DELETE_BUDGET_BALANCE, id);
 		executeUpdate(Queries.DELETE_BUDGET, id);
 	}
 	
@@ -224,6 +226,7 @@ public class DbHelper implements IDbHelper {
 		}
 		return results;
 	}
+	
 	@Override
 	public List<Income> getAllIncome() {
 		List<Income> results = new ArrayList<Income>();
@@ -282,7 +285,7 @@ public class DbHelper implements IDbHelper {
 	@Override
 	public void createScheduledJob(ScheduledJob job) throws Exception {
 		executeUpdate(Queries.INSERT_SCHEDULED_TXN, job.getName(),
-				job.getBudget_id(),
+				job.getBudgetId(),
 				job.getDayToRun(),
 				job.getAmount(),
 				job.calculateNextRunTime());
@@ -322,7 +325,36 @@ public class DbHelper implements IDbHelper {
 			LOGGER.severe(LogConfig.format("error closing connection", e));
 		}
 		return results;
-		
+	}
+	@Override
+	public List<ScheduledJob> getSchedueldJobsForDisplay() {
+		List<ScheduledJob> results = new ArrayList<ScheduledJob>();
+		ResultSet rs = executeGet(Queries.GET_SCHED_TXNS_FOR_DISPLAY);
+		if (rs != null) {
+			try {
+				while (rs.next()) {
+					Date lastRun = rs.getDate(6) == null ? null : DateHelper.fromString(rs.getString(6));
+					Date nextRun = rs.getDate(7) == null ? null : DateHelper.fromString(rs.getString(7));
+					results.add(new ScheduledJob(rs.getInt(1),
+							rs.getString(2),
+							rs.getString(3),
+							rs.getDouble(4),
+							rs.getInt(5),
+							lastRun,
+							nextRun));
+				}
+			} catch (SQLException | ParseException e) {
+	    	  	LOGGER.severe(LogConfig.format("error reading results", e));
+	      }
+		}
+		try {
+			if (rs != null) {
+				rs.close();
+			}
+		} catch (SQLException e) {
+			LOGGER.severe(LogConfig.format("error closing connection", e));
+		}
+		return results;
 	}
 	
 	@Override
@@ -400,8 +432,8 @@ public class DbHelper implements IDbHelper {
 	@Override
 	public void insertScheduledTransaction(ScheduledJob job) throws Exception {
 		
-		double balance = getBalanceForBudget(job.getBudget_id());
-		int budgetId = job.getBudget_id();
+		double balance = getBalanceForBudget(job.getBudgetId());
+		int budgetId = job.getBudgetId();
 		double amount = job.getAmount();
 		
 		Connection c = openConnection();
@@ -428,7 +460,7 @@ public class DbHelper implements IDbHelper {
 			updateBalance.executeUpdate();
 				
 			updateJob.setString(1, DateHelper.toString(new Date()));
-			updateJob.setString(2, DateHelper.toString(new Date()));
+			updateJob.setString(2, DateHelper.toString(job.calculateNextRunTime()));
 			updateJob.setInt(3, job.getId());
 			updateJob.executeUpdate();
 			c.commit();
@@ -462,6 +494,64 @@ public class DbHelper implements IDbHelper {
 				new Date(),
 				job.calculateNextRunTime(),
 				job.getId());
+	}
+
+	@Override
+	public List<Transaction> getTransactions(SearchTransactionInput input) throws Exception {
+		List<Transaction> results = new ArrayList<Transaction>();
+		
+		String query = "select b.name, tt.txn_type_desc, t.amount, t.desc, t.created, b.budget_id " + 
+				"			from BudgetTransaction t, " + 
+				"			TransactionType tt, " + 
+				"			Budget b " + 
+				"			where b.budget_id = t.budget_id " +
+				"			and tt.txn_type = t.txn_type ";
+		
+		List<Object> parameters = new ArrayList<>();
+		if (input.getBudgetId() != null && input.getBudgetId() > 0) {
+			query = query.concat("and t.budget_id = ? ");
+			parameters.add(input.getBudgetId());
+		}
+		if (input.getTxnType() != null && input.getTxnType() > 0) {
+			query = query.concat("and t.txn_type = ? ");
+			parameters.add(input.getTxnType());
+		}
+		if (input.getFromDate() != null && !input.getFromDate().isEmpty()) {
+			query = query.concat("and created >= ? ");
+			parameters.add(input.getFromDate());
+		}
+		if (input.getToDate() != null && !input.getToDate().isEmpty()) {
+			query = query.concat("and created <= ? ");
+			parameters.add(input.getToDate());
+		}
+		
+		ResultSet rs;
+		rs = executeGet(query, parameters.toArray());
+		
+		if (rs != null) {
+			try {
+				int i = 0;
+				while (rs.next()) {
+					results.add(new Transaction(i++, 
+							new Budget(rs.getInt(6), rs.getString(1), 0.0, false, 0.0, null),
+							rs.getDouble(3),
+							rs.getString(4) == null ? "" : rs.getString(4),
+							TransactionType.valueOf(rs.getString(2)),
+							DateHelper.fromString(rs.getString(5))
+							));
+				}
+			} catch (SQLException e) {
+	    	  	LOGGER.severe(LogConfig.format("error reading results", e));
+	      }
+		}
+		try {
+			if (rs != null) {
+				rs.close();
+			}
+		} catch (SQLException e) {
+			LOGGER.severe(LogConfig.format("error closing connection", e));
+		}
+		return results;
 	}
 	
 	private double getBalanceForBudget(int budgetId) throws SQLException {

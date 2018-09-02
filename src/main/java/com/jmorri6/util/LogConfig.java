@@ -35,7 +35,7 @@ public class LogConfig {
 			String logger = loggers.nextElement();
 			if (logger.startsWith("com.jmorri6")) {
 				Logger log = LogManager.getLogManager().getLogger(logger);
-				log.setLevel(Level.FINE);
+				log.setLevel(Level.INFO);
 				log.addHandler(handler);
 			}
 		}

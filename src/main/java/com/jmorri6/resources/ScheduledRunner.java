@@ -19,7 +19,7 @@ public class ScheduledRunner {
 	private static final Logger LOGGER = Logger.getLogger(ScheduledRunner.class.getName());
 	private IDbHelper db = new DbHelper();
 	
-	@Schedule(hour="*", minute="0,30")
+	@Schedule(hour="0, 6, 12, 18")
 	public void runJobs() {	
 		LOGGER.info("ScheduledRunner starting...");
 		List<ScheduledJob> jobs;

@@ -16,6 +16,7 @@ import com.google.gson.Gson;
 import com.jmorri6.pojo.ScheduledJob;
 import com.jmorri6.util.DbHelper;
 import com.jmorri6.util.IDbHelper;
+import com.jmorri6.util.LogConfig;
 
 @Singleton
 @Path("/schedules")
@@ -27,8 +28,8 @@ private static final Logger LOGGER = Logger.getLogger(ScheduleResource.class.get
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Response getSchedules() {
-		LOGGER.info("Getting all income...");
-		List<ScheduledJob> results = dbHelper.getSchedueldJobs();
+		LOGGER.info("Getting scheduledJobs...");
+		List<ScheduledJob> results = dbHelper.getSchedueldJobsForDisplay();
 		String stuff = new Gson().toJson(results);
 		if (results != null && results.size() > 0) {
 			return Response.ok().entity(stuff).build();
@@ -47,6 +48,7 @@ private static final Logger LOGGER = Logger.getLogger(ScheduleResource.class.get
 		try {
 			dbHelper.createScheduledJob(job);
 		} catch (Exception e) {
+			LOGGER.severe(LogConfig.format("Error adding scheduled job", e));
 			return Response.status(409).build();
 		}
 		
@@ -59,11 +61,22 @@ private static final Logger LOGGER = Logger.getLogger(ScheduleResource.class.get
 	public Response deleteSchedule(@PathParam("id") Integer id) {
 		LOGGER.info("Got request to delete");
 		try {
-			dbHelper.deleteIncome(id);
+			dbHelper.deleteScheduledJob(id);
 		} catch (Exception e) {
+			LOGGER.severe(LogConfig.format("Error deleting scheduled job", e));
 			return Response.status(409).build();
 		}
 		
 		return Response.ok().build();
 	}
+	
+	@POST
+	@Path("/{id}")
+	@Produces({ MediaType.APPLICATION_JSON })
+	public Response updateSchedule(@PathParam("id") Integer id, String json) {
+		LOGGER.info("Got request to update schedule");
+
+		return Response.status(409).build();
+	}
+	
 }
